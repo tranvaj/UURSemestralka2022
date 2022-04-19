@@ -41,7 +41,9 @@ public class WordleStringProcessor {
             while(sc.hasNextLine()){
                 String word = sc.nextLine();
                 word = word.toUpperCase();
-                if(word.length() != this.wordLength) continue;
+                if(word.length() != this.wordLength) {
+                    continue;
+                }
                 for(int i = 0; i < wordLength; i++){
                     String allowedChars = getAllowedLetters().toUpperCase();
                     if(allowedChars.indexOf(word.charAt(i)) == -1){
