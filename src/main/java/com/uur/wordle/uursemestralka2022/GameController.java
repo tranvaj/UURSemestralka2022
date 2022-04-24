@@ -10,6 +10,7 @@ public class GameController {
     private int wordLength;
     private int numberOfTries;
     private String allowedLetters;
+    private WordleStringProcessor processor;
 
     public GameController(MainView view, int wordLength, int numberOfTries, String allowedLetters, String fileLoc){
         this.view = view;
@@ -22,7 +23,7 @@ public class GameController {
 
 
     private void NewGame(String fileLoc){
-        WordleStringProcessor processor = new WordleStringProcessor(fileLoc,wordLength,allowedLetters);
+        processor = new WordleStringProcessor(fileLoc,wordLength,allowedLetters);
         List<String> words = processor.parseData();
         this.game = new GameWordle(words,wordLength, numberOfTries);
         this.game.startGame();
@@ -32,4 +33,7 @@ public class GameController {
         return game;
     }
 
+    public WordleStringProcessor getProcessor() {
+        return processor;
+    }
 }

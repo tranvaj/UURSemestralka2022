@@ -9,11 +9,15 @@ public class WordleStringProcessor {
     private String fileLoc;
     private int wordLength;
     private String allowedLetters;
+    private List<String> allowedWords;
+    private List<String> notAddedWords;
 
     public WordleStringProcessor(String fileLoc, int wordLength, String allowedLetters){
         this.fileLoc = fileLoc;
         this.wordLength = wordLength;
         this.allowedLetters = allowedLetters;
+        allowedWords = new ArrayList<>();
+        notAddedWords = new ArrayList<>();
     }
 
     public String getAllowedLetters(){
@@ -42,6 +46,7 @@ public class WordleStringProcessor {
                 String word = sc.nextLine();
                 word = word.toUpperCase();
                 if(word.length() != this.wordLength) {
+                    notAddedWords.add(word);
                     continue;
                 }
                 for(int i = 0; i < wordLength; i++){
@@ -53,10 +58,12 @@ public class WordleStringProcessor {
                 }
                 if(goNext){
                     goNext = false;
+                    notAddedWords.add(word);
                     continue;
                 }
                 listOfWords.add(word);
             }
+            allowedWords = listOfWords;
             return listOfWords;
         } catch (Exception e){
             System.out.println(e.getMessage());
@@ -64,4 +71,7 @@ public class WordleStringProcessor {
         }
     }
 
+    public List<String> getNotAddedWords() {
+        return notAddedWords;
+    }
 }

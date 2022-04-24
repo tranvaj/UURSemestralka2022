@@ -47,7 +47,17 @@ public class SettingsView {
         strom = new TreeView<>();
         strom.setCellFactory(param -> new SettingsCellFactory());
         strom.setEditable(false);
+        expandTreeView(root);
         strom.setRoot(root);
+    }
+
+    private void expandTreeView(TreeItem<?> item){
+        if(item != null && !item.isLeaf()){
+            item.setExpanded(true);
+            for(TreeItem<?> child:item.getChildren()){
+                expandTreeView(child);
+            }
+        }
     }
 
     public TreeView<SettingsData> getStrom() {

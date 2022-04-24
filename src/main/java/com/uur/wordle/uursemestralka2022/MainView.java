@@ -1,10 +1,12 @@
 package com.uur.wordle.uursemestralka2022;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.NumberBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -80,10 +82,25 @@ public class MainView extends Application {
         settingsView.getDarkModeCheckBox().selectedProperty().bindBidirectional(darkMode);
         settingsView.getLoadWords().setOnAction(event -> {
             FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Open Resource File");
+            fileChooser.setTitle("Load File");
+            fileChooser.getExtensionFilters().addAll(
+                    new FileChooser.ExtensionFilter("Text Files", "*.txt"));
             File selected = fileChooser.showOpenDialog(stage);
-            wordFileLoc = selected.getAbsolutePath();
-            fullGameReset();
+            if(selected != null){
+                wordFileLoc = selected.getAbsolutePath();
+                fullGameReset();
+                List<String> unaddedWords = gameController.getProcessor().getNotAddedWords();
+                if(!unaddedWords.isEmpty()){
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                    //alert.setResizable(true);
+                    alert.setTitle("Unadded words");
+                    alert.setHeaderText(null);
+                    alert.setContentText("These words were not added because they did not match the given criteria.");
+                    ListView<String> stringList = new ListView<String>(FXCollections.observableArrayList(unaddedWords));
+                    alert.setGraphic(stringList);
+                    alert.showAndWait();
+                }
+            }
         });
 
         mainScene = new Scene(mainAppView, windowMinSizeW, windowMinSizeH);
@@ -182,7 +199,7 @@ public class MainView extends Application {
     private void switchToLeaderboardView(){
         BorderPane bp = new BorderPane();
         bp.setCenter(leaderboardsView.getView());
-        bp.setRight(getRight());
+        //bp.setRight(getRight());
         bp.setTop(getTop());
         mainScene.setRoot(bp);
     }
@@ -190,7 +207,7 @@ public class MainView extends Application {
     private void switchToSettingsView(){
         BorderPane bp = new BorderPane();
         bp.setCenter(settingsView.getStrom());
-        bp.setRight(getRight());
+        //bp.setRight(getRight());
         bp.setTop(getTop());
         mainScene.setRoot(bp);
     }
@@ -210,18 +227,18 @@ public class MainView extends Application {
         ButtonType btnContinueGame = new ButtonType("Continue");
         ButtonType btnNewGame = new ButtonType("New game");
         ButtonType btnSaveScore = new ButtonType("Save score & Start new game");
-        ButtonType btnCancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+        //ButtonType btnCancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
         alert.setContentText("Choose your next action:");
 
         if(gameState == GameWordle.GAME_STATE.WIN){
             alert.setTitle("Congratulations");
             alert.setHeaderText("You guessed the word correctly!");
-            alert.getButtonTypes().setAll(btnContinueGame, btnNewGame, btnSaveScore,btnCancel);
+            alert.getButtonTypes().setAll(btnContinueGame, btnNewGame, btnSaveScore);
         }
         else if(gameState == GameWordle.GAME_STATE.LOSE){
             alert.setTitle("Unlucky");
             alert.setHeaderText("You have no more guess attempts left!");
-            alert.getButtonTypes().setAll(btnNewGame, btnSaveScore,btnCancel);
+            alert.getButtonTypes().setAll(btnNewGame, btnSaveScore);
         } else{
             return;
         }
@@ -293,8 +310,48 @@ public class MainView extends Application {
 
     private Node getTop() {
         MenuBar menu = new MenuBar();
-        Menu item1 = new Menu("test");
-        menu.getMenus().addAll(item1);
+        Menu item1 = new Menu("Game");
+
+        MenuItem newGame = new MenuItem("New Game");
+        MenuItem lb = new MenuItem("Leaderboards");
+        MenuItem settings = new MenuItem("Settings");
+        MenuItem mm = new MenuItem("Main Screen");
+        MenuItem exit = new MenuItem("Exit");
+
+        newGame.setOnAction(event -> {
+            setNewGame();
+        });
+
+        mm.setOnAction(event -> {
+            switchToDefaultGameView();
+        });
+
+        lb.setOnAction(event -> {
+            switchToLeaderboardView();
+        });
+
+        settings.setOnAction(event -> {
+            switchToSettingsView();
+        });
+        exit.setOnAction(event -> {
+                Platform.exit();
+                System.exit(0);
+        });
+
+        item1.getItems().addAll(newGame,new SeparatorMenuItem(),mm,lb,settings,new SeparatorMenuItem(),exit);
+        Menu item2 = new Menu("Help");
+        MenuItem about = new MenuItem("About");
+        item2.getItems().addAll(new SeparatorMenuItem(), about);
+        about.setOnAction(event -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("About application");
+            alert.setHeaderText(null);
+            alert.setContentText("Wordle Game\nUUR Semestral Work 2022 by Vaclav Tran");
+
+            alert.showAndWait();
+        });
+
+        menu.getMenus().addAll(item1, item2);
         return menu;
     }
 
@@ -319,7 +376,9 @@ public class MainView extends Application {
 
         vb.getChildren().addAll(scoreContainer);
 
-        vb.setStyle("-fx-background-color: " + toHexString(bgColor)+ "; -fx-border-color: blue");
+        //vb.setStyle("-fx-background-color: " + toHexString(bgColor)+ "; -fx-border-color: blue");
+        vb.setStyle("-fx-background-color: " + toHexString(bgColor));
+
         vb.setPadding(new Insets(10));
         vb.setSpacing(10);
         return vb;
@@ -347,9 +406,16 @@ public class MainView extends Application {
             switchToSettingsView();
         });
 
-        vb.setStyle("-fx-background-color: " + toHexString(bgColor)+ "; -fx-border-color: blue");
+        //vb.setStyle("-fx-background-color: " + toHexString(bgColor)+ "; -fx-border-color: blue");
+        vb.setStyle("-fx-background-color: " + toHexString(bgColor));
+
         vb.setPadding(new Insets(10));
         vb.setSpacing(10);
+
+        vb.getChildren().forEach(node -> {
+            node.setVisible(false);
+        });
+
         return vb;
     }
 
