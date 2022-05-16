@@ -68,9 +68,36 @@ public class MainView extends Application {
         //send reference of view to gameController
         allowedLetters = new SimpleStringProperty("abcdefghijklmnopqrstuvxyz");
         darkMode = new SimpleBooleanProperty(true);
-        wordFileLoc = "1000-most-common-words.txt";
-
+        wordFileLoc = "defaultDictionary.txt";
         loadGameSettings();
+        File file = new File(wordFileLoc);
+        if(!file.isFile()){
+            Alert alert2 = new Alert(Alert.AlertType.CONFIRMATION);
+            alert2.setTitle("Confirmation");
+            alert2.setHeaderText(null);
+            alert2.setContentText("Could not find the dictionary\n"+file.getAbsolutePath()+"\nDo you want to load your own dictionary?");
+
+            Optional<ButtonType> result = alert2.showAndWait();
+            if (result.get() == ButtonType.OK){
+            } else{
+                Platform.exit();
+                return;
+            }
+
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Load Dictionary");
+            fileChooser.getExtensionFilters().addAll(
+                    new FileChooser.ExtensionFilter("Text Files", "*.txt"));
+            File selected = fileChooser.showOpenDialog(stage);
+            if(selected != null){
+                wordFileLoc = selected.getAbsolutePath();
+            } else{
+                createErrorMessage("You did not select any file. Ending program.");
+                Platform.exit();
+                return;
+            }
+        }
+
         try{
             gameController = new GameController(this, wordLength, numberOfTries, allowedLetters.get(), wordFileLoc);
         } catch (Exception E){
@@ -215,6 +242,8 @@ public class MainView extends Application {
         stage.show();
     }
 
+
+
     private void changeGameColor(){
         Color copyOpColor = Color.valueOf(toHexString(opColor));
         Color copyBgColor = Color.valueOf(toHexString(bgColor));
@@ -249,7 +278,7 @@ public class MainView extends Application {
                 set[i] = sc.nextLine().split("=")[1];
                 i++;
             }
-            System.out.println(set.length);
+            //System.out.println(set.length);
             String al = set[0];
             String wordFile = set[1];
             boolean dm = Boolean.parseBoolean(set[2]);
@@ -277,9 +306,9 @@ public class MainView extends Application {
         return this.gameController.getGame().getCurrentTry();
     }
     private void writeInComponent(KeyEvent event) {
-        System.out.println(gameController.getGame().getGameState().toString());
+        //System.out.println(gameController.getGame().getGameState().toString());
         if(gameController.getGame().getGameState() != GameWordle.GAME_STATE.PLAYING){
-            System.out.println(gameController.getGame().getGameState().toString());
+            //System.out.println(gameController.getGame().getGameState().toString());
             return;
         }
 
@@ -299,13 +328,13 @@ public class MainView extends Application {
             currentlyWrittenWord = str;
         }
 
-        System.out.println(currentIndex);
+        //System.out.println(currentIndex);
         changeRowText(currentIndex,currentlyWrittenWord);
 
         if(event.getCode() == KeyCode.ENTER){
             if(currentlyWrittenWord.length() == wordLength) {
                 boolean tf = gameController.getGame().guessWord(currentlyWrittenWord);
-                System.out.println(tf);
+                //System.out.println(tf);
                 if(tf){
                     updateGameComponent();
                     currentlyWrittenWord = "";
@@ -620,7 +649,7 @@ public class MainView extends Application {
                 //StackPane.setAlignment(flowContainer,Pos.CENTER_RIGHT);
                 gp.add(pane, i,j,1,1);
                 //GridPane.setConstraints(pane,i,j,1,1, HPos.CENTER, VPos.CENTER, Priority.ALWAYS, Priority.ALWAYS)
-                System.out.println(i + " " + j);
+                //System.out.println(i + " " + j);
             }
         }
         gp.setAlignment(Pos.CENTER);
