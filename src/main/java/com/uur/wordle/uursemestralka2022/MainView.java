@@ -66,7 +66,7 @@ public class MainView extends Application {
     public void start(Stage stage) throws IOException {
 
         //send reference of view to gameController
-        allowedLetters = new SimpleStringProperty("abcdefghijklmnopqrstuvxyz");
+        allowedLetters = new SimpleStringProperty("abcdefghijklmnopqrstuvwxyz");
         darkMode = new SimpleBooleanProperty(true);
         wordFileLoc = "defaultDictionary.txt";
         loadGameSettings();
@@ -203,6 +203,16 @@ public class MainView extends Application {
         //leaderboardsView.saveLb();
 
         stage.setOnCloseRequest(event -> {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Confirmation");
+            alert.setHeaderText(null);
+            alert.setContentText("Are you sure you want to exit? You will lose any unsaved progress/scores.");
+
+            Optional<ButtonType> result = alert.showAndWait();
+            if (result.get() != ButtonType.OK){
+                event.consume();
+            }
+
             try {
                 leaderboardsView.saveLb();
                 saveGameSettings();
@@ -509,6 +519,7 @@ public class MainView extends Application {
             Optional<ButtonType> result = alert2.showAndWait();
             if (result.get() == ButtonType.OK){
                 setNewGame();
+                switchToDefaultGameView();
             } else{
                 return;
             }
@@ -526,6 +537,15 @@ public class MainView extends Application {
             switchToSettingsView();
         });
         exit.setOnAction(event -> {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Confirmation");
+            alert.setHeaderText(null);
+            alert.setContentText("Are you sure you want to exit? You will lose any unsaved progress/scores.");
+
+            Optional<ButtonType> result = alert.showAndWait();
+            if (result.get() != ButtonType.OK){
+                return;
+            }
             try {
                 leaderboardsView.saveLb();
                 saveGameSettings();
