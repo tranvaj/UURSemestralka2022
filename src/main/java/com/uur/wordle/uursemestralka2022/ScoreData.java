@@ -3,6 +3,7 @@ package com.uur.wordle.uursemestralka2022;
 import javafx.beans.property.*;
 import javafx.scene.control.TableView;
 
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 
 public class ScoreData {
@@ -26,5 +27,10 @@ public class ScoreData {
 
     public ObjectProperty<LocalDate> localDateProperty() {
         return localDate;
+    }
+
+    @Override
+    public String toString() {
+        return name.get() + ":" + score.get() + ":" + localDate.get().toString();
     }
 }

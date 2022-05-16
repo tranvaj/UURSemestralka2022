@@ -27,13 +27,17 @@ public class GameWordle {
     private IntegerProperty score;
 
 
-    public GameWordle(List<String> wordsList, int WORD_LENGTH, int NUMBER_OF_TRIES) {
+    public GameWordle(List<String> wordsList, int WORD_LENGTH, int NUMBER_OF_TRIES) throws Exception {
+        if(wordsList.size() < 1){
+            throw new Exception("There are 0 words in the list!");
+        }
         this.wordsList = wordsList;
         this.WORD_LENGTH = WORD_LENGTH;
         this.NUMBER_OF_TRIES = NUMBER_OF_TRIES;
         this.score = new SimpleIntegerProperty(0);
         startGame();
     }
+
 
     private void addWord(String guessWord){
         this.gameArray[indexAttempt] = guessWord;
@@ -138,6 +142,8 @@ public class GameWordle {
     private void chooseRandomWord(){
         Random rnd = new Random();
         int index = rnd.nextInt(wordsList.size());
+
+        //System.out.println(wordsList.size());
         currentWord = wordsList.get(index).toUpperCase();
     }
 

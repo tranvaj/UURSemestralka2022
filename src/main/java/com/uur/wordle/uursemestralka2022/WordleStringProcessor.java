@@ -1,6 +1,7 @@
 package com.uur.wordle.uursemestralka2022;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -36,39 +37,34 @@ public class WordleStringProcessor {
         this.fileLoc = fileLoc;
     }
 
-    public List<String> parseData(){
-        try{
-            List<String> listOfWords = new ArrayList<>();
-            Scanner sc = new Scanner(new File(fileLoc));
+    public List<String> parseData() throws FileNotFoundException {
+        List<String> listOfWords = new ArrayList<>();
+        Scanner sc = new Scanner(new File(fileLoc));
 
-            boolean goNext = false;
-            while(sc.hasNextLine()){
-                String word = sc.nextLine();
-                word = word.toUpperCase();
-                if(word.length() != this.wordLength) {
-                    notAddedWords.add(word);
-                    continue;
-                }
-                for(int i = 0; i < wordLength; i++){
-                    String allowedChars = getAllowedLetters().toUpperCase();
-                    if(allowedChars.indexOf(word.charAt(i)) == -1){
-                        goNext = true;
-                        break;
-                    }
-                }
-                if(goNext){
-                    goNext = false;
-                    notAddedWords.add(word);
-                    continue;
-                }
-                listOfWords.add(word);
+        boolean goNext = false;
+        while(sc.hasNextLine()){
+            String word = sc.nextLine();
+            word = word.toUpperCase();
+            if(word.length() != this.wordLength) {
+                notAddedWords.add(word);
+                continue;
             }
-            allowedWords = listOfWords;
-            return listOfWords;
-        } catch (Exception e){
-            System.out.println(e.getMessage());
-            return null;
+            for(int i = 0; i < wordLength; i++){
+                String allowedChars = getAllowedLetters().toUpperCase();
+                if(allowedChars.indexOf(word.charAt(i)) == -1){
+                    goNext = true;
+                    break;
+                }
+            }
+            if(goNext){
+                goNext = false;
+                notAddedWords.add(word);
+                continue;
+            }
+            listOfWords.add(word);
         }
+        allowedWords = listOfWords;
+        return listOfWords;
     }
 
     public List<String> getNotAddedWords() {

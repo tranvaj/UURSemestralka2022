@@ -6,6 +6,8 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.binding.NumberBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -22,25 +24,26 @@ import javafx.scene.text.TextFlow;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.net.URL;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Scanner;
 
 public class MainView extends Application {
-    private BooleanProperty darkMode;
-    private Color bgColor = Color.BLACK;
-    private Color opColor = Color.WHITE;
+    public static BooleanProperty darkMode;
+    public static Color bgColor = Color.BLACK;
+    public static Color opColor = Color.WHITE;
     private Color notInWord = Color.GRAY;
     private Color wrongPos = Color.rgb(252, 186, 3);
     private Color correctPos = Color.GREEN;
 
     private int wordLength = 5;
     private int numberOfTries = 6;
-    private String allowedLetters = "abcdefghijklmnopqrstuvxyz";
-    private String wordFileLoc = "1000-most-common-words.txt";
+    private StringProperty allowedLetters;
+    public static String wordFileLoc;
 
     private List<List<StackPane>> wordPaneList;
     private int windowMinSizeW = 500;
@@ -55,24 +58,38 @@ public class MainView extends Application {
     private StackPane gameView;
     private LeaderboardsView leaderboardsView;
     private SettingsView settingsView;
+
+
+
+
     @Override
     public void start(Stage stage) throws IOException {
+
         //send reference of view to gameController
-        gameController = new GameController(this, wordLength, numberOfTries, allowedLetters, wordFileLoc);
-
-
-
+        allowedLetters = new SimpleStringProperty("abcdefghijklmnopqrstuvxyz");
         darkMode = new SimpleBooleanProperty(true);
+        wordFileLoc = "1000-most-common-words.txt";
+
+        loadGameSettings();
+        try{
+            gameController = new GameController(this, wordLength, numberOfTries, allowedLetters.get(), wordFileLoc);
+        } catch (Exception E){
+            createErrorMessage("Something wrong happened: \n"  + E.getMessage());
+            Platform.exit();
+            return;
+        }
+
+
         darkMode.addListener(observable -> {
-            Color copyOpColor = Color.valueOf(toHexString(opColor));
-            Color copyBgColor = Color.valueOf(toHexString(bgColor));
-            opColor = copyBgColor;
-            bgColor = copyOpColor;
-            gameView.getChildren().get(0).setStyle("-fx-background-color: " + toHexString(bgColor));
-            mainAppView.setLeft(getLeft());
-            mainAppView.setRight(getRight());
-            updateGameComponent();
-            changeRowText(getCurrentIndex(),currentlyWrittenWord);
+            String css = this.getClass().getResource("darkMode.css").toExternalForm();
+            changeGameColor();
+            if(darkMode.get()){
+                mainScene.getStylesheets().add(css);
+            } else{
+                mainScene.getStylesheets().remove("darkMode.css");
+                mainScene.getStylesheets().clear();
+                //lSystem.out.println("removed");
+            }
         });
 
 
@@ -81,6 +98,19 @@ public class MainView extends Application {
         settingsView = new SettingsView();
         settingsView.getDarkModeCheckBox().selectedProperty().bindBidirectional(darkMode);
         settingsView.getLoadWords().setOnAction(event -> {
+            Alert alert2 = new Alert(Alert.AlertType.CONFIRMATION);
+            alert2.setTitle("Confirmation");
+            alert2.setHeaderText(null);
+            alert2.setContentText("This will reset your game. Are you OK with this?\n" +
+                    "Currently loaded dictionary: \n\n" + wordFileLoc);
+
+            Optional<ButtonType> result = alert2.showAndWait();
+            if (result.get() == ButtonType.OK){
+            } else{
+                return;
+            }
+
+
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Load File");
             fileChooser.getExtensionFilters().addAll(
@@ -95,11 +125,13 @@ public class MainView extends Application {
                     //alert.setResizable(true);
                     alert.setTitle("Unadded words");
                     alert.setHeaderText(null);
-                    alert.setContentText("These words were not added because they did not match the given criteria.");
+                    alert.setContentText("These words were not added because they did not match the given criteria. \n\n" +
+                            "Word length must be: " + wordLength + "\nAllowed letters in a word: " + allowedLetters.get().toUpperCase());
                     ListView<String> stringList = new ListView<String>(FXCollections.observableArrayList(unaddedWords));
                     alert.setGraphic(stringList);
                     alert.showAndWait();
                 }
+                fullGameReset();
             }
         });
 
@@ -136,6 +168,45 @@ public class MainView extends Application {
 
 
 
+        try{
+            leaderboardsView.loadLb();
+        } catch (FileNotFoundException e){
+            System.out.println("Could not load leaderboards.");
+        }
+        //leaderboardsView.saveLb();
+
+        stage.setOnCloseRequest(event -> {
+            try {
+                leaderboardsView.saveLb();
+                saveGameSettings();
+            } catch (FileNotFoundException e) {
+                System.out.println("Could not save leaderboards to a file");
+            }
+        });
+
+        settingsView.getAllowedLetters().setText(allowedLetters.get());
+
+        settingsView.getAllowedLetters().setOnAction(event -> {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Confirmation");
+            alert.setHeaderText(null);
+            alert.setContentText("This will reset your game. Are you OK with this?");
+
+            Optional<ButtonType> result = alert.showAndWait();
+            if (result.get() == ButtonType.OK){
+                allowedLetters.set(settingsView.getAllowedLetters().getText());
+                fullGameReset();
+            } else{
+                settingsView.getAllowedLetters().setText(allowedLetters.get());
+            }
+        });
+        if(!darkMode.get()){
+            changeGameColor();
+        } else{
+            String css = this.getClass().getResource("darkMode.css").toExternalForm();
+            mainScene.getStylesheets().add(css);
+        }
+
         //mainScene.setFill(bgColor);
         stage.setMinHeight(windowMinSizeH + windowMinSizeH/10);
         stage.setMinWidth(windowMinSizeW + windowMinSizeW/10);
@@ -144,7 +215,63 @@ public class MainView extends Application {
         stage.show();
     }
 
+    private void changeGameColor(){
+        Color copyOpColor = Color.valueOf(toHexString(opColor));
+        Color copyBgColor = Color.valueOf(toHexString(bgColor));
+        opColor = copyBgColor;
+        bgColor = copyOpColor;
+        gameView.getChildren().get(0).setStyle("-fx-background-color: " + toHexString(bgColor));
+        mainAppView.setLeft(getLeft());
+        mainAppView.setRight(getRight());
+        updateGameComponent();
+        changeRowText(getCurrentIndex(),currentlyWrittenWord);
+    }
 
+    public void saveGameSettings(){
+        try {
+            PrintWriter printWriter = new PrintWriter("settings.txt");
+            printWriter.println("allowedLetters=" + allowedLetters.get());
+            //System.out.println(allowedLetters);
+            printWriter.println("wordFileLoc=" + wordFileLoc);
+            printWriter.println("darkMode=" + darkMode.get());
+            printWriter.close();
+        } catch (Exception E){
+            createErrorMessage("Error, could not save settings.\n" + E.getMessage());
+        }
+    }
+
+    public void loadGameSettings(){
+        try {
+            Scanner sc = new Scanner(new File("settings.txt"));
+            String[] set = new String[3];
+            int i = 0;
+            while (sc.hasNextLine()) {
+                set[i] = sc.nextLine().split("=")[1];
+                i++;
+            }
+            System.out.println(set.length);
+            String al = set[0];
+            String wordFile = set[1];
+            boolean dm = Boolean.parseBoolean(set[2]);
+
+            allowedLetters.set(al);
+            wordFileLoc = wordFile;
+            darkMode.setValue(dm);
+        }
+        catch (Exception E){
+            createErrorMessage("Could not load game settings file. Using default settings.\n" + E.getMessage());
+
+        }
+    }
+
+    public static void createErrorMessage(String message){
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+
+        alert.showAndWait();
+    }
 
     private int getCurrentIndex(){
         return this.gameController.getGame().getCurrentTry();
@@ -157,7 +284,7 @@ public class MainView extends Application {
         }
 
         char keyChar = event.getCode().getChar().toUpperCase().charAt(0);
-        String allowedLetters = this.allowedLetters.toUpperCase();
+        String allowedLetters = this.allowedLetters.get().toUpperCase();
         int currentIndex = getCurrentIndex();
 
         if(allowedLetters.indexOf(keyChar) != -1 && currentlyWrittenWord.length() < wordLength){
@@ -196,20 +323,19 @@ public class MainView extends Application {
         mainScene.setRoot(mainAppView);
     }
 
+
     private void switchToLeaderboardView(){
-        BorderPane bp = new BorderPane();
-        bp.setCenter(leaderboardsView.getView());
-        //bp.setRight(getRight());
-        bp.setTop(getTop());
-        mainScene.setRoot(bp);
+        BorderPane lbPane = new BorderPane();
+        lbPane.setCenter(leaderboardsView.getView());
+        lbPane.setTop(getTop());
+        mainScene.setRoot(lbPane);
     }
 
     private void switchToSettingsView(){
-        BorderPane bp = new BorderPane();
-        bp.setCenter(settingsView.getStrom());
-        //bp.setRight(getRight());
-        bp.setTop(getTop());
-        mainScene.setRoot(bp);
+        BorderPane settingsPane = new BorderPane();
+        settingsPane.setCenter(settingsView.getStrom());
+        settingsPane.setTop(getTop());
+        mainScene.setRoot(settingsPane);
     }
 
     private void continueGame(){
@@ -249,24 +375,29 @@ public class MainView extends Application {
         } else if (result.get() == btnNewGame) {
             setNewGame();
         } else if (result.get() == btnSaveScore) {
-            int score = gameController.getGame().scoreProperty().get();
-            TextInputDialog dialog = new TextInputDialog("Player");
-            dialog.setTitle("Please input your name");
-            dialog.setContentText("Please enter your name:");
-
-            Optional<String> nameRes = dialog.showAndWait();
-            while (!nameRes.isPresent() || nameRes.get().isBlank()){
-                if(nameRes.get().isBlank()){
-
-                }
-                nameRes = dialog.showAndWait();
-            }
-            leaderboardsView.addScore(new ScoreData(nameRes.get(),score, LocalDate.now()));
-            setNewGame();
+            saveScore();
         } else {
             // ... user chose CANCEL or closed the dialog
         }
     }
+
+    private void saveScore(){
+        int score = gameController.getGame().scoreProperty().get();
+        TextInputDialog dialog = new TextInputDialog("Player");
+        dialog.setTitle("Please input your name");
+        dialog.setContentText("Please enter your name:");
+
+        Optional<String> nameRes = dialog.showAndWait();
+        while (!nameRes.isPresent() || nameRes.get().isBlank()){
+            if(nameRes.get().isBlank()){
+
+            }
+            nameRes = dialog.showAndWait();
+        }
+        leaderboardsView.addScore(new ScoreData(nameRes.get(),score, LocalDate.now()));
+        setNewGame();
+    }
+
 
     private void updateGameComponent(){
         String[] gameArr = gameController.getGame().getGameArray();
@@ -303,7 +434,15 @@ public class MainView extends Application {
     }
 
     private void fullGameReset() {
-        gameController = new GameController(this,wordLength,numberOfTries,allowedLetters,wordFileLoc);
+        try{
+            gameController = new GameController(this,wordLength,numberOfTries,allowedLetters.get(),wordFileLoc);
+        } catch (Exception E){
+            createErrorMessage("Something wrong happened: " + E.getMessage());
+            Platform.exit();
+            return;
+        }
+        Text text = (Text) scoreContainer.getChildren().get(0);
+        text.textProperty().bind(Bindings.concat("Score: ").concat(gameController.getGame().scoreProperty().asString()));
         updateGameComponent();
         currentlyWrittenWord = "";
     }
@@ -313,10 +452,24 @@ public class MainView extends Application {
         Menu item1 = new Menu("Game");
 
         MenuItem newGame = new MenuItem("New Game");
+        MenuItem saveScore = new MenuItem("Save Score");
         MenuItem lb = new MenuItem("Leaderboards");
         MenuItem settings = new MenuItem("Settings");
         MenuItem mm = new MenuItem("Main Screen");
         MenuItem exit = new MenuItem("Exit");
+
+        saveScore.setOnAction(event -> {
+            Alert alert2 = new Alert(Alert.AlertType.CONFIRMATION);
+            alert2.setTitle("Confirmation");
+            alert2.setHeaderText(null);
+            alert2.setContentText("This will reset your game. Are you OK with this?");
+            Optional<ButtonType> result = alert2.showAndWait();
+            if (result.get() == ButtonType.OK){
+                saveScore();
+            } else{
+                return;
+            }
+        });
 
         newGame.setOnAction(event -> {
             setNewGame();
@@ -338,10 +491,11 @@ public class MainView extends Application {
                 System.exit(0);
         });
 
-        item1.getItems().addAll(newGame,new SeparatorMenuItem(),mm,lb,settings,new SeparatorMenuItem(),exit);
+        item1.getItems().addAll(newGame,saveScore,new SeparatorMenuItem(),mm,lb,settings,new SeparatorMenuItem(),exit);
         Menu item2 = new Menu("Help");
+        MenuItem help = new MenuItem("How To Play");
         MenuItem about = new MenuItem("About");
-        item2.getItems().addAll(new SeparatorMenuItem(), about);
+        item2.getItems().addAll(help, new SeparatorMenuItem(), about);
         about.setOnAction(event -> {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("About application");
@@ -351,8 +505,25 @@ public class MainView extends Application {
             alert.showAndWait();
         });
 
+        help.setOnAction(event -> {
+            createInformationAlert("Guess the WORDLE in six tries.\n" +
+                    "\n" +
+                    "Each guess must be a five-letter word. Hit the enter button to submit.\n" +
+                    "\n" +
+                    "After each guess, the color of the tiles will change to show how close your guess was to the word." +
+                    "\n\nGREEN if the letter is in the correct spot\nYELLOW if it is in the wrong spot\nGRAY if it is not in any spot.");
+        });
+
         menu.getMenus().addAll(item1, item2);
         return menu;
+    }
+
+    public static void createInformationAlert(String message){
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Information");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     public Node getBottom(){

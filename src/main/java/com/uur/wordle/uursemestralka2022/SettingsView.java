@@ -1,15 +1,14 @@
 package com.uur.wordle.uursemestralka2022;
 
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeView;
+import javafx.scene.control.*;
+import javafx.scene.text.Text;
 
 public class SettingsView {
     private TreeView<SettingsData> strom;
     private CheckBox darkModeCheckBox;
     private Button loadWords;
+    private TextField allowedLetters;
 
 
     public SettingsView() {
@@ -22,7 +21,10 @@ public class SettingsView {
         darkModeCheckBox = new CheckBox();
         darkModeCheckBox.setSelected(true);
 
+        allowedLetters = new TextField();
+
         loadWords = new Button("Load dictionary");
+
 
 
         TreeItem<SettingsData> root = new TreeItem<>(
@@ -37,18 +39,23 @@ public class SettingsView {
                 new SettingsData("Gameplay",  SettingsData.SettingsType.LABEL, null));
         TreeItem<SettingsData> c1 = new TreeItem<>(
                 new SettingsData("Dictionary",  SettingsData.SettingsType.LABEL, loadWords));
+        TreeItem<SettingsData> c2 = new TreeItem<>(
+                new SettingsData("Allowed letters in word (Press ENTER to confirm change)",  SettingsData.SettingsType.LABEL, allowedLetters));
 
 
         root.getChildren().addAll(a1,a2);
         a1.getChildren().addAll(b1);
 
-        a2.getChildren().addAll(c1);
+        a2.getChildren().addAll(c1,c2);
 
         strom = new TreeView<>();
         strom.setCellFactory(param -> new SettingsCellFactory());
         strom.setEditable(false);
         expandTreeView(root);
         strom.setRoot(root);
+
+
+
     }
 
     private void expandTreeView(TreeItem<?> item){
@@ -60,6 +67,8 @@ public class SettingsView {
         }
     }
 
+
+
     public TreeView<SettingsData> getStrom() {
         return strom;
     }
@@ -70,5 +79,9 @@ public class SettingsView {
 
     public CheckBox getDarkModeCheckBox() {
         return darkModeCheckBox;
+    }
+
+    public TextField getAllowedLetters() {
+        return allowedLetters;
     }
 }
