@@ -416,15 +416,17 @@ public class MainView extends Application {
         dialog.setTitle("Please input your name");
         dialog.setContentText("Please enter your name:");
 
-        Optional<String> nameRes = dialog.showAndWait();
-        while (!nameRes.isPresent() || nameRes.get().isBlank()){
-            if(nameRes.get().isBlank()){
-
+        try{
+            Optional<String> nameRes = dialog.showAndWait();
+            while (!nameRes.isPresent() || nameRes.get().isBlank()){
+                nameRes = dialog.showAndWait();
             }
-            nameRes = dialog.showAndWait();
+
+            leaderboardsView.addScore(new ScoreData(nameRes.get(),score, LocalDate.now()));
+            setNewGame();
+        } catch (Exception E){
+            createErrorMessage("Something wrong happened: " + E.getMessage());
         }
-        leaderboardsView.addScore(new ScoreData(nameRes.get(),score, LocalDate.now()));
-        setNewGame();
     }
 
 
@@ -501,7 +503,16 @@ public class MainView extends Application {
         });
 
         newGame.setOnAction(event -> {
-            setNewGame();
+            Alert alert2 = new Alert(Alert.AlertType.CONFIRMATION);
+            alert2.setTitle("Confirmation");
+            alert2.setHeaderText(null);
+            alert2.setContentText("Are you sure you want to start a new game? This will reset your progess.");
+            Optional<ButtonType> result = alert2.showAndWait();
+            if (result.get() == ButtonType.OK){
+                setNewGame();
+            } else{
+                return;
+            }
         });
 
         mm.setOnAction(event -> {
