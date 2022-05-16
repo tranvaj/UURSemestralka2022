@@ -243,7 +243,6 @@ public class MainView extends Application {
     }
 
 
-
     private void changeGameColor(){
         Color copyOpColor = Color.valueOf(toHexString(opColor));
         Color copyBgColor = Color.valueOf(toHexString(bgColor));
@@ -527,8 +526,13 @@ public class MainView extends Application {
             switchToSettingsView();
         });
         exit.setOnAction(event -> {
+            try {
+                leaderboardsView.saveLb();
+                saveGameSettings();
+            } catch (FileNotFoundException e) {
+                System.out.println("Could not save leaderboards to a file");
+            }
                 Platform.exit();
-                System.exit(0);
         });
 
         item1.getItems().addAll(newGame,saveScore,new SeparatorMenuItem(),mm,lb,settings,new SeparatorMenuItem(),exit);
