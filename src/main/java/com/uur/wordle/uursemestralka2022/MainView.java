@@ -297,7 +297,7 @@ public class MainView extends Application {
             darkMode.setValue(dm);
         }
         catch (Exception E){
-            createErrorMessage("Could not load game settings file. Using default settings.\n" + E.getMessage());
+            createInformationAlert("Could not load game settings file. Using default settings.\n" + E.getMessage());
 
         }
     }
@@ -428,6 +428,7 @@ public class MainView extends Application {
         try{
             Optional<String> nameRes = dialog.showAndWait();
             while (!nameRes.isPresent() || nameRes.get().isBlank()){
+                if(!dialog.getEditor().getText().isBlank())  return;
                 nameRes = dialog.showAndWait();
             }
 
